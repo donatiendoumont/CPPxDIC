@@ -15,20 +15,20 @@ dic_path = /output
 
 # --- Subject / experiment ---
 subject_id = S09
-phase_id = loading
-material_id = 2
-ref_trial_id = 5
+phase_id = no_phase
+material_id = 1
+ref_trial_id = 1
 
 # --- Frictional conditions ---
 frictional_conditions = glass,coating,coating_oil
 nfcond_set = 5
 spddxlcond_set = 0.04,0.08
-calib_folder_set = 2
+calib_folder_set = 1
 
 # --- Sampling ---
 robot_sample_freq = 1000.0
 vid_sample_freq = 50.0
-num_pair = 2
+num_pair = 4
 
 # --- Frames ---
 idx_frame_start = 1
@@ -36,12 +36,12 @@ idx_frame_end = 150
 frame_jump = 1
 
 # --- Processing flags ---
-im_filter_mode = false
+im_filter_mode = true
 
 # Grayscale saturation (satur.m clipping above limit_grayscale) on imported frames.
 # Set false for videos already filtered/normalised upstream (e.g. MNG rigs):
 # clipping such frames flattens the speckle contrast and makes ncorr diverge.
-im_saturation_mode = true
+im_saturation_mode = false
 
 # When true, idx_frame_start/idx_frame_end/frame_jump are authoritative; the
 # protocol-derived per-phase window (from the protocol .mat) is not applied.
@@ -52,7 +52,7 @@ debug_mode = false
 
 # --- Step D (2D DIC) ---
 step_d_analysis_type = regular
-step_d_radius = 40
+step_d_radius = 30
 step_d_spacing = 10
 step_d_cutoff_diffnorm = 1e-5
 step_d_cutoff_iteration = 100
@@ -66,7 +66,7 @@ step_d_replacebadcorr = false
 
 # --- Step E (3D Reconstruction) ---
 step_e_analysis_type = regular
-step_e_radius = 60
+step_e_radius = 40
 step_e_spacing = 10
 step_e_cutoff_diffnorm = 1e-5
 step_e_cutoff_iteration = 100
@@ -91,7 +91,7 @@ step_e_ray_bvh = false
 
 # --- Step F (Deformation) ---
 step_f_analysis_type = regular
-step_f_radius = 40
+step_f_radius = 30
 step_f_spacing = 10
 step_f_cutoff_diffnorm = 1e-5
 step_f_cutoff_iteration = 100
@@ -110,7 +110,7 @@ step_f_compute_rbm = false
 # (e.g. an 8-camera rig: camera_pairs = 1,2;3,4;5,6;7,8). Missing entries default
 # to (2N-1, 2N). Video files, REF masks/seeds and DLT calibrations are resolved
 # from these camera ids.
-camera_pairs = 1,2;4,3
+camera_pairs = 1,2;3,4;6,5;8,7
 
 # --- Units & Calibration ---
 units_per_pixel = 0.2
@@ -120,5 +120,5 @@ subregion_radius = 20
 limit_grayscale = 0
 
 # --- Output ---
-fileversion = v2
+fileversion = v1
 data_format = mat

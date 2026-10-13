@@ -191,7 +191,7 @@ save_videos = true
 # Cutoff for iterative solver (convergence threshold)
 # This is the diffnorm threshold for Newton iterations
 # Default: 1e-6
-cutoff_norm = 1e-6
+cutoff_norm = 1e-5
 
 # Maximum number of iterations for solver
 # Default: 100

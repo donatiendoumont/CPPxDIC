@@ -1,0 +1,5 @@
+[ERROR] This file /globalscratch/ucl/inma/ddoumont/analysis/NC_osc/coating//REF_MASK_005_loading_pair1.mat must exist to be able to run DIC analysis in parallel. This file comes from Drawing Reference ROI process. ROI file for the stereopair 1 from the Reference Trial 5 for the subject NC_osc not found.
+[ERROR] This file /globalscratch/ucl/inma/ddoumont/analysis/NC_osc/coating//REF_SEED_005_loading_pair1.mat must exist to be able to run DIC analysis in parallel. This file comes from Selecting the seed of ROI process. SEED file for the stereopair 1 from the Reference Trial 5 for the subject NC_osc not found.
+[WARN ] No protocol .mat file in /globalscratch/ucl/inma/ddoumont/example_data/rawdata/NC_osc/speckles/coating/protocol/ — reference trial comes from ref_trial_id=5 and the frame window from idx_frame_start/end (10..150).
+[ERROR] Calibration directory not found: /globalscratch/ucl/inma/ddoumont/analysis/NC_osc/calib/2/
+[ERROR] Data and protocol check failed!

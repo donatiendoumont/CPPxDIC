@@ -1,0 +1,28 @@
+Array task 1 / job 7934007
+Subject=NC_osc  Trial source=--trials 1
+[INFO ] FINGERTIP 3D RECONSTRUCTION using DIC
+[INFO ] --------------------------------------
+[INFO ] DIC analysis for the fingertip
+[INFO ] [SLURM array] task 1 -> trial 1
+[INFO ] Loading configuration files...
+[INFO ] ------------------------------
+[INFO ] Config file not found: config/default.cfg, using compiled defaults / per-file params
+[INFO ] Loading DIC parameters from: dic_params.txt
+[INFO ] DIC parameters loaded from file
+[INFO ] Loading NCorr parameters from: ncorr_params.txt
+[INFO ] NCorr parameters loaded from file
+[INFO ] Loading visualization parameters from: visualization_params.txt
+[INFO ] Visualization parameters loaded from file
+[INFO ] Subject overridden to: NC_osc
+[INFO ] Variables updated. Material: glass
+[INFO ] xDIC reconstruction mode: camerapairs
+[INFO ] Final Configuration:
+[INFO ] --------------------
+[INFO ] Subject: NC_osc, Phase: no_phase, Material: glass, Stereo Pairs: 4
+[INFO ] Reference trial number: 1
+[INFO ] Frame: 1 to 150, jump= 1 (protocol window applies when a .mat protocol exists)
+[INFO ] Camera pairs: pair1=(1,2)  pair2=(3,4)  pair3=(6,5)  pair4=(8,7)
+[INFO ] Saturation: off (limit_grayscale=auto), Image filtering: on, DIC engine: ncorr, Threads (step D): 1 (sequential)
+[INFO ] Show visualization: 0, Debug mode: 0, Automatic process: 1
+[INFO ] Checking the data and protocol...
+[INFO ] Checking data and protocol...

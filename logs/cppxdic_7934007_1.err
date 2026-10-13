@@ -1,0 +1,3 @@
+[WARN ] No protocol .mat file in /data/rawdata/NC_osc/speckles/glass/protocol/ — reference trial comes from ref_trial_id=1 and the frame window from idx_frame_start/end (1..150).
+[ERROR] Calibration directory not found: /output/NC_osc/calib/1/
+[ERROR] Data and protocol check failed!
