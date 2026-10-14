@@ -1,0 +1,3 @@
+[WARN ] No protocol .mat file in /data/rawdata/DD4_rolling/speckles/glass/protocol/ — reference trial comes from ref_trial_id=1 and the frame window from idx_frame_start/end (1..120).
+[ERROR] Calibration directory not found: /output/DD4_rolling/calib/5/
+[ERROR] Data and protocol check failed!

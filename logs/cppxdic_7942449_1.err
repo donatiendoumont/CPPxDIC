@@ -1,0 +1,3 @@
+INFO:    Environment variable SINGULARITY_BIND is set, but APPTAINER_BIND is preferred
+[ERROR] Calibration directory not found: /output/DD4_rolling/calib/5/
+[ERROR] Data and protocol check failed!

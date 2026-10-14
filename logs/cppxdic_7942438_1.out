@@ -1,0 +1,28 @@
+Array task 1 / job 7942438
+Subject=DD4_rolling  Trial source=--trials 1
+[INFO ] FINGERTIP 3D RECONSTRUCTION using DIC
+[INFO ] --------------------------------------
+[INFO ] DIC analysis for the fingertip
+[INFO ] [SLURM array] task 1 -> trial 1
+[INFO ] Loading configuration files...
+[INFO ] ------------------------------
+[INFO ] Config file not found: config/default.cfg, using compiled defaults / per-file params
+[INFO ] Loading DIC parameters from: dic_params.txt
+[INFO ] DIC parameters loaded from file
+[INFO ] Loading NCorr parameters from: ncorr_params.txt
+[INFO ] NCorr parameters loaded from file
+[INFO ] Loading visualization parameters from: visualization_params.txt
+[INFO ] Visualization parameters loaded from file
+[INFO ] Subject overridden to: DD4_rolling
+[INFO ] Variables updated. Material: glass
+[INFO ] xDIC reconstruction mode: camerapairs
+[INFO ] Final Configuration:
+[INFO ] --------------------
+[INFO ] Subject: DD4_rolling, Phase: whole_slide, Material: glass, Stereo Pairs: 4
+[INFO ] Reference trial number: 1
+[INFO ] Frame: 1 to 120, jump= 1 (forced, protocol window ignored)
+[INFO ] Camera pairs: pair1=(1,2)  pair2=(3,4)  pair3=(5,6)  pair4=(7,8)
+[INFO ] Saturation: off (limit_grayscale=150), Image filtering: on, DIC engine: ncorr, Threads (step D): 1 (sequential)
+[INFO ] Show visualization: 0, Debug mode: 0, Automatic process: 1
+[INFO ] Checking the data and protocol...
+[INFO ] Checking data and protocol...
