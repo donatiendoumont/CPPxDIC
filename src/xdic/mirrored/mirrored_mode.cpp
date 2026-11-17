@@ -55,7 +55,6 @@ namespace fs = std::filesystem;
 // MATLAB stepD_2DDIC_MNG.m constants.
 constexpr int kMngFps = 50;          // theGlobalSettings_MNG.actual_FS_vid
 constexpr int kLimitGrayscale = 120; // LIMIT_GRAYSCALE
-const std::vector<int> kParamFiltIm = {25, 300}; // param_filt_im default
 
 // Default physical-camera ordering from theGlobalSettings_MNG.cam_order = [2 1 4 3],
 // used only if the config supplies an empty mirrored_cam_order.
@@ -375,6 +374,176 @@ ncorr::DIC_analysis_output runViewDic(const Config& config, const cv::Mat& ref_i
     return dic_out;
 }
 
+// ---- Visual check of the view1 -> view2 matching ---------------------------------------
+
+// BGR copy of `img` where everything outside `roi_mask` is divided by 4.
+cv::Mat dimOutsideRoi(const cv::Mat& img, const cv::Mat& roi_mask) {
+    cv::Mat g8;
+    if (img.depth() == CV_8U) {
+        g8 = img.clone();
+    } else {
+        double mn = 0.0, mx = 0.0;
+        cv::minMaxLoc(img, &mn, &mx);
+        img.convertTo(g8, CV_8U, (mx <= 1.0) ? 255.0 : 1.0);
+    }
+    if (g8.channels() == 3) cv::cvtColor(g8, g8, cv::COLOR_BGR2GRAY);
+    cv::Mat dim;
+    g8.convertTo(dim, CV_8U, 0.25);
+    if (!roi_mask.empty() && roi_mask.size() == g8.size() && roi_mask.channels() == 1) {
+        const cv::Mat inside = roi_mask > 0;
+        g8.copyTo(dim, inside); // same brightness inside the ROI
+    }
+    cv::Mat bgr;
+    cv::cvtColor(dim, bgr, cv::COLOR_GRAY2BGR);
+    return bgr;
+}
+
+// Thin (1 px) green ROI outline.
+void drawRoiOutline(cv::Mat& bgr, const cv::Mat& roi_mask) {
+    if (roi_mask.empty() || roi_mask.size() != bgr.size() || roi_mask.channels() != 1) return;
+    cv::Mat inside = roi_mask > 0;
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(inside, contours, cv::RETR_LIST, cv::CHAIN_APPROX_NONE);
+    cv::drawContours(bgr, contours, -1, cv::Scalar(0, 255, 0), 1, cv::LINE_8);
+}
+
+// One PNG per pair: [ref | cur] side by side, brightness /4 outside each ROI, ROI outline,
+// red seed dot, subset circle (radius `radius`) around the seed in the reference view and
+// the same circle transported by the matching displacement field in the current view
+// (cyan cross = exact transported centre; red dot = seed2 actually used, rounded to the
+// subset grid). A caption strip below gives subject / trial / pair / view numbers.
+// Purely a visualisation: it never changes any result and never throws.
+void saveMatchCheckImage(const Config& config, int trial, const ViewPair& vp,
+                         const cv::Mat& ref_img, const cv::Mat& cur_img, const cv::Mat& roi_ref,
+                         const cv::Mat& roi_cur, const cppxdic::SeedPoint& seed_ref,
+                         const cppxdic::SeedPoint& seed_cur,
+                         const ncorr::DIC_analysis_output& dic12, int radius,
+                         const std::string& out_path) {
+    try {
+        cv::Mat left = dimOutsideRoi(ref_img, roi_ref);
+        cv::Mat right = dimOutsideRoi(cur_img, roi_cur);
+        if (right.size() != left.size()) cv::resize(right, right, left.size());
+        drawRoiOutline(left, roi_ref);
+        drawRoiOutline(right, roi_cur);
+
+        const cv::Scalar kRed(0, 0, 255), kYellow(0, 255, 255), kCyan(255, 255, 0);
+        int n_fallback = 0;
+
+        if (!dic12.disps.empty() && seed_ref.pw.size() == 2) {
+            const auto& disp = dic12.disps.front();
+            const auto& u_data = disp.get_u();
+            const auto& v_data = disp.get_v();
+            const auto& u_array = u_data.get_array();
+            const auto& v_array = v_data.get_array();
+            const double scale = static_cast<double>(disp.get_scalefactor());
+            const int gw = static_cast<int>(u_data.data_width());
+            const int gh = static_cast<int>(u_data.data_height());
+            const auto& valid = disp.get_roi().get_mask();
+            auto gridOk = [&](int gx, int gy) {
+                if (gx < 0 || gy < 0 || gx >= gw || gy >= gh) return false;
+                return static_cast<bool>(valid(gy, gx)) && std::isfinite(u_array(gy, gx)) &&
+                       std::isfinite(v_array(gy, gx));
+            };
+            // Bilinear (u, v) in pixels at pixel (px, py); grid point g <-> pixel g * scale.
+            auto sample = [&](double px, double py, double& u, double& v) {
+                const double gx = px / scale, gy = py / scale;
+                const int x0 = static_cast<int>(std::floor(gx));
+                const int y0 = static_cast<int>(std::floor(gy));
+                if (!(gridOk(x0, y0) && gridOk(x0 + 1, y0) && gridOk(x0, y0 + 1) &&
+                      gridOk(x0 + 1, y0 + 1)))
+                    return false;
+                const double fx = gx - x0, fy = gy - y0;
+                auto lerp = [&](const auto& a) {
+                    return (1 - fx) * (1 - fy) * a(y0, x0) + fx * (1 - fy) * a(y0, x0 + 1) +
+                           (1 - fx) * fy * a(y0 + 1, x0) + fx * fy * a(y0 + 1, x0 + 1);
+                };
+                u = lerp(u_array);
+                v = lerp(v_array);
+                return true;
+            };
+
+            // Centre: the seed itself when the field is valid there, else the valid grid
+            // point nearest to it.
+            double cx = seed_ref.pw[0], cy = seed_ref.pw[1];
+            int sgx = static_cast<int>(std::lround(cx / scale));
+            int sgy = static_cast<int>(std::lround(cy / scale));
+            if (!gridOk(sgx, sgy)) {
+                double best = 1e300;
+                int bx = -1, by = -1;
+                for (int gy = 0; gy < gh; ++gy)
+                    for (int gx = 0; gx < gw; ++gx)
+                        if (gridOk(gx, gy)) {
+                            const double d = (gx * scale - cx) * (gx * scale - cx) +
+                                             (gy * scale - cy) * (gy * scale - cy);
+                            if (d < best) { best = d; bx = gx; by = gy; }
+                        }
+                if (bx >= 0) { sgx = bx; sgy = by; cx = bx * scale; cy = by * scale; }
+            }
+            double uc = 0.0, vc = 0.0;
+            bool have_center = sample(cx, cy, uc, vc);
+            if (!have_center && gridOk(sgx, sgy)) {
+                uc = u_array(sgy, sgx);
+                vc = v_array(sgy, sgx);
+                have_center = true;
+            }
+
+            // Subset circle in the reference view, and its image through the field.
+            std::vector<cv::Point> ring_ref, ring_cur;
+            for (int k = 0; k < 72; ++k) {
+                const double t = 2.0 * CV_PI * k / 72.0;
+                const double px = cx + radius * std::cos(t);
+                const double py = cy + radius * std::sin(t);
+                double u = uc, v = vc;
+                if (!sample(px, py, u, v)) { ++n_fallback; u = uc; v = vc; }
+                ring_ref.emplace_back(cvRound(px), cvRound(py));
+                ring_cur.emplace_back(cvRound(px + u), cvRound(py + v));
+            }
+            cv::polylines(left, ring_ref, true, kYellow, 1, cv::LINE_AA);
+            if (have_center) cv::polylines(right, ring_cur, true, kYellow, 1, cv::LINE_AA);
+            cv::circle(left, cv::Point(cvRound(cx), cvRound(cy)), 4, kRed, cv::FILLED);
+            if (have_center)
+                cv::drawMarker(right, cv::Point(cvRound(cx + uc), cvRound(cy + vc)), kCyan,
+                               cv::MARKER_CROSS, 12, 1);
+        }
+        if (seed_cur.pw.size() == 2)
+            cv::circle(right, cv::Point(seed_cur.pw[0], seed_cur.pw[1]), 4, kRed, cv::FILLED);
+
+        const cv::Scalar white(255, 255, 255);
+        auto half = [](const ViewInfo& v) { return v.half == MaskHalf::Left ? "L" : "R"; };
+        cv::putText(left, "ref view " + std::to_string(vp.view1.view_nbr), cv::Point(10, 24),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.7, white, 1, cv::LINE_AA);
+        cv::putText(right, "cur view " + std::to_string(vp.view2.view_nbr), cv::Point(10, 24),
+                    cv::FONT_HERSHEY_SIMPLEX, 0.7, white, 1, cv::LINE_AA);
+
+        cv::Mat both, strip(64, left.cols * 2, CV_8UC3, cv::Scalar(0, 0, 0)), out;
+        cv::hconcat(left, right, both);
+        std::ostringstream l1, l2;
+        l1 << "subject=" << config.subject_id << "  trial=" << padNumber(trial, 3)
+           << "  pair=" << vp.stereopair << "  phase=" << config.phase_id;
+        l2 << "ref = view " << vp.view1.view_nbr << " (cam " << vp.view1.cam_nbr << ", half "
+           << half(vp.view1) << ")  |  cur = view " << vp.view2.view_nbr << " (cam "
+           << vp.view2.cam_nbr << ", half " << half(vp.view2) << ")  |  subset radius "
+           << radius << " px";
+        cv::putText(strip, l1.str(), cv::Point(10, 24), cv::FONT_HERSHEY_SIMPLEX, 0.7, white, 1,
+                    cv::LINE_AA);
+        cv::putText(strip, l2.str(), cv::Point(10, 52), cv::FONT_HERSHEY_SIMPLEX, 0.7, white, 1,
+                    cv::LINE_AA);
+        cv::vconcat(both, strip, out);
+
+        if (!cv::imwrite(out_path, out)) {
+            LOG_WARN << "mirrored: could not write " << out_path;
+            return;
+        }
+        LOG_INFO << "    Match check image: " << out_path
+                 << (n_fallback ? " (" + std::to_string(n_fallback) +
+                                      "/72 circle points outside the valid field: centre "
+                                      "displacement used)"
+                                : std::string());
+    } catch (const std::exception& e) {
+        LOG_WARN << "mirrored: match check image failed (" << e.what() << "); results unaffected";
+    }
+}
+
 // Process one stereopair end-to-end for one trial.
 bool processPair(const Config& config, int trial, const ViewPair& vp, int frameStart, int frameEnd,
                  int frameJump) {
@@ -475,13 +644,19 @@ bool processPair(const Config& config, int trial, const ViewPair& vp, int frameS
     //    for view2 -- identical to StepDWorkflow::applyImageFiltering.
     std::vector<cv::Mat> view1, view2;
     if (config.im_filter_mode) {
-        auto [f1, gs_bounds] =
-            cppxdic::ImageProcessor::filterLikeBen(view1_satur, roi_view1, kParamFiltIm, nullptr);
-        auto [f2, _] =
-            cppxdic::ImageProcessor::filterLikeBen(view2_satur, roi_view1, kParamFiltIm, &gs_bounds);
+        // param_filt_im and the normalisation percentiles come from dic_params.txt
+        // (defaults 25,300 and 5,95 = the former hard-coded values).
+        const std::vector<int>& param_filt = config.param_filt_im;
+        const double p_lo = config.filt_percentiles[0];
+        const double p_hi = config.filt_percentiles[1];
+        auto [f1, gs_bounds] = cppxdic::ImageProcessor::filterLikeBen(
+            view1_satur, roi_view1, param_filt, nullptr, p_lo, p_hi);
+        auto [f2, _] = cppxdic::ImageProcessor::filterLikeBen(
+            view2_satur, roi_view1, param_filt, &gs_bounds, p_lo, p_hi);
         view1 = std::move(f1);
         view2 = std::move(f2);
-        LOG_INFO << "--> STEP : filtering done";
+        LOG_INFO << "--> STEP : filtering done (param_filt_im=[" << param_filt[0] << ","
+                 << param_filt[1] << "], percentiles=[" << p_lo << "," << p_hi << "])";
     } else {
         view1 = view1_satur;
         view2 = view2_satur;
@@ -540,6 +715,14 @@ bool processPair(const Config& config, int trial, const ViewPair& vp, int frameS
         }
         LOG_INFO << "--> STEP : Ncorr matching " << vp.view1.view_nbr << "-" << vp.view2.view_nbr
                  << " done (seed2=" << seed2.pw[0] << "," << seed2.pw[1] << ")";
+
+        // Visual check of the matching (ref | cur with ROI, seed, subset circle).
+        if (config.save_match_check_image) {
+            saveMatchCheckImage(config, trial, vp, view1.front(), view2.front(), roi_view1,
+                                roi_view2_matched, match_seed, seed2, dic12, step_match.radius,
+                                out_dir + "/check_match_pair" + std::to_string(vp.stereopair) +
+                                    ".png");
+        }
     }
 
     // 10. TRACKING view1 across all frames (ncorr1).
@@ -609,9 +792,28 @@ bool run(const Config& config, const std::vector<int>& trials_in) {
         LOG_INFO << "Trials: [" << tl.str() << "], reference trial " << config.ref_trial_id;
     }
 
+    // Pairs to run: config.mirrored_pairs when set (validated), else all 1..num_pair.
+    std::vector<int> pairs_to_run;
+    for (int p : config.mirrored_pairs) {
+        if (p < 1 || p > num_pair) {
+            LOG_ERROR << "mirrored: mirrored_pairs contains " << p << ", outside 1.." << num_pair;
+            return false;
+        }
+        if (std::find(pairs_to_run.begin(), pairs_to_run.end(), p) == pairs_to_run.end())
+            pairs_to_run.push_back(p);
+    }
+    if (pairs_to_run.empty()) {
+        for (int p = 1; p <= num_pair; ++p) pairs_to_run.push_back(p);
+    }
+    {
+        std::ostringstream pl;
+        for (std::size_t i = 0; i < pairs_to_run.size(); ++i) pl << (i ? "," : "") << pairs_to_run[i];
+        LOG_INFO << "Pairs: [" << pl.str() << "]";
+    }
+
     bool all_ok = true;
     for (int trial : trials) {
-        for (int pair = 1; pair <= num_pair; ++pair) {
+        for (int pair : pairs_to_run) {
             ViewPair vp;
             try {
                 vp = resolveViewPair(pair, cam_order);

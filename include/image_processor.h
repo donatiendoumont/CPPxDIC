@@ -53,8 +53,10 @@ public:
         filterLikeBen(const std::vector<cv::Mat>& input, 
                       const cv::Mat& mask,
                       const std::vector<int>& param_filt,
-                      const std::pair<double, double>* gs_boundaries = nullptr);
-    
+                      const std::pair<double, double>* gs_boundaries = nullptr,
+                      double lower_percentile = 5.0,
+                      double upper_percentile = 95.0);
+
     /**
      * Apply bandpass filter to image using FFT
      * 

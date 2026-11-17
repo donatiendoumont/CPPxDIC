@@ -59,7 +59,9 @@ std::pair<std::vector<cv::Mat>, std::pair<double, double>>
 ImageProcessor::filterLikeBen(const std::vector<cv::Mat>& input,
                               const cv::Mat& mask,
                               const std::vector<int>& param_filt,
-                              const std::pair<double, double>* gs_boundaries) {
+                              const std::pair<double, double>* gs_boundaries,
+                              double lower_percentile,
+                              double upper_percentile) {
     
     std::vector<cv::Mat> filtered_images;
     std::pair<double, double> boundaries;
@@ -72,7 +74,7 @@ ImageProcessor::filterLikeBen(const std::vector<cv::Mat>& input,
     
     // Compute boundaries from FIRST FILTERED image using percentiles (5th, 95th) if not provided
     if (gs_boundaries == nullptr) {
-        boundaries = computePercentileBoundaries(filtered_images[0], mask, 5.0, 95.0);
+        boundaries = computePercentileBoundaries(filtered_images[0], mask, lower_percentile, upper_percentile);
         LOG_DEBUG << "  Computed filter boundaries: [" << boundaries.first << ", " << boundaries.second << "]";
     } else {
         boundaries = *gs_boundaries;

@@ -825,14 +825,18 @@ void StepDWorkflow::applyImageFiltering(const std::vector<cv::Mat>& cam_first_sa
                                        std::vector<cv::Mat>& cam_first,
                                        std::vector<cv::Mat>& cam_second) {
     // Apply Ben's filtering
-    std::vector<int> param_filt = {25, 300};
-    
+    // Band-pass radii and normalisation percentiles come from dic_params.txt
+    // (param_filt_im, filt_percentiles); defaults 25,300 and 5,95 as before.
+    const std::vector<int>& param_filt = config_.param_filt_im;
+    const double p_lo = config_.filt_percentiles[0];
+    const double p_hi = config_.filt_percentiles[1];
+
     auto [filtered_first, gs_bounds] = ImageProcessor::filterLikeBen(
-        cam_first_satur, refmask_trial, param_filt, nullptr);
-    
+        cam_first_satur, refmask_trial, param_filt, nullptr, p_lo, p_hi);
+
     // Use same boundaries for second camera
     auto [filtered_second, _] = ImageProcessor::filterLikeBen(
-        cam_second_satur, refmask_trial, param_filt, &gs_bounds);
+        cam_second_satur, refmask_trial, param_filt, &gs_bounds, p_lo, p_hi);
     
     cam_first = filtered_first;
     cam_second = filtered_second;

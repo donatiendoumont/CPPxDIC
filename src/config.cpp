@@ -156,6 +156,8 @@ bool Config::loadFromDicParamsFile(const std::string& filepath) {
             mirrored_num_pair = std::stoi(value);
         } else if (!(value = parseConfigValue(line, "mirrored_cam_order")).empty()) {
             mirrored_cam_order = parseIntList(value);
+        } else if (!(value = parseConfigValue(line, "mirrored_pairs")).empty()) {
+            mirrored_pairs = parseIntList(value);
         } else if (!(value = parseConfigValue(line, "robot_sample_freq")).empty()) {
             robot_sample_freq = std::stod(value);
         } else if (!(value = parseConfigValue(line, "vid_sample_freq")).empty()) {
@@ -172,6 +174,25 @@ bool Config::loadFromDicParamsFile(const std::string& filepath) {
         // Processing flags
         else if (!(value = parseConfigValue(line, "im_filter_mode")).empty()) {
             im_filter_mode = parseBool(value);
+        } else if (!(value = parseConfigValue(line, "param_filt_im")).empty()) {
+            std::vector<int> p = parseIntList(value);
+            if (p.size() == 2 && p[0] >= 0 && p[1] > 0) {
+                param_filt_im = p;
+            } else {
+                LOG_WARN << "param_filt_im must be 'r1,r2' with r1>=0, r2>0 (got '" << value
+                         << "'); keeping " << param_filt_im[0] << "," << param_filt_im[1];
+            }
+        } else if (!(value = parseConfigValue(line, "filt_percentiles")).empty()) {
+            std::vector<double> p = parseDoubleList(value);
+            if (p.size() == 2 && p[0] >= 0.0 && p[0] < p[1] && p[1] <= 100.0) {
+                filt_percentiles = p;
+            } else {
+                LOG_WARN << "filt_percentiles must be 'low,high' with 0<=low<high<=100 (got '"
+                         << value << "'); keeping " << filt_percentiles[0] << ","
+                         << filt_percentiles[1];
+            }
+        } else if (!(value = parseConfigValue(line, "save_match_check_image")).empty()) {
+            save_match_check_image = parseBool(value);
         } else if (!(value = parseConfigValue(line, "im_saturation_mode")).empty()) {
             im_saturation_mode = parseBool(value);
         } else if (!(value = parseConfigValue(line, "force_frame_window")).empty()) {

@@ -39,6 +39,8 @@ public:
     // executable is built with -DXDIC_MODE=mirrored.
     int mirrored_num_pair = 7;                        // Npair: 8 views -> 7 overlapping stereopairs
     std::vector<int> mirrored_cam_order = {2, 1, 4, 3}; // cam_order: physical camera per view slot
+    // Stereopairs to process (1-based, within 1..mirrored_num_pair). Empty = all pairs.
+    std::vector<int> mirrored_pairs;
     double robot_sample_freq = 1000.0; // robot sampling frequency (Hz)
     double vid_sample_freq = 50.0;     // image sampling frequency (Hz)
 
@@ -49,6 +51,13 @@ public:
 
     // Processing flags
     bool im_filter_mode = true;
+    // filter_like_ben.m settings (Matlab param_filt_im): Gaussian band-pass radii [r1, r2]
+    // (r1 = high-pass, r2 = low-pass, in frequency pixels) and the grey-scale percentiles
+    // [low, high] (in %) used to normalise the filtered images over the ROI.
+    std::vector<int> param_filt_im = {25, 300};
+    std::vector<double> filt_percentiles = {5.0, 95.0};
+    // Mirrored mode: write check_match_pair<N>.png (ref | cur with ROI, seed, subset circle).
+    bool save_match_check_image = true;
     // Grayscale saturation (satur.m: clip pixels above limit_grayscale) applied to
     // every imported frame before ROI/matching/tracking. Set false for videos that
     // were already filtered/normalised upstream (e.g. MNG rigs), where clipping
