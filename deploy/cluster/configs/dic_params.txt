@@ -1,5 +1,5 @@
 # =============================================================================
-# DIC Parameters for HPC Cluster Runs
+# DIC Parameters for HPC Cluster Runs - MIRRORED mode (cppxdic_mirrored.sif)
 # Copy and edit this file for each experiment. The container reads it at
 # runtime via bind-mount — no rebuild needed.
 #
@@ -31,8 +31,8 @@ vid_sample_freq = 50.0
 num_pair = 4
 
 # --- Frames ---
-idx_frame_start = 1
-idx_frame_end = 120
+idx_frame_start = 16
+idx_frame_end = 120 #120 
 frame_jump = 1
 
 # --- Processing flags ---
@@ -41,33 +41,37 @@ im_filter_mode = true
 # Grayscale saturation (satur.m clipping above limit_grayscale) on imported frames.
 # Set false for videos already filtered/normalised upstream (e.g. MNG rigs):
 # clipping such frames flattens the speckle contrast and makes ncorr diverge.
-im_saturation_mode = false
+im_saturation_mode = true
 
 # When true, idx_frame_start/idx_frame_end/frame_jump are authoritative; the
 # protocol-derived per-phase window (from the protocol .mat) is not applied.
 force_frame_window = true
 automatic_process = true
-parallel_processing = false
+# MIRRORED: tracking runs frame-parallel when true (matching view1->view2 is always
+# sequential). The Manneback report used true with 32 threads. Keep step_d_total_threads
+# equal to --cpus-per-task.
+parallel_processing = true
 debug_mode = false
 
 # --- Step D (2D DIC) ---
 step_d_analysis_type = regular
 step_d_radius = 30
-step_d_spacing = 10
+step_d_spacing = 20
 step_d_cutoff_diffnorm = 1e-5
 step_d_cutoff_iteration = 100
-step_d_total_threads = 1
+# MIRRORED: number of ncorr threads. Set it to the --cpus-per-task of the job (8 here).
+step_d_total_threads = 16
 step_d_high_strain_enabled = true
 step_d_seed_type = seed
 step_d_auto_update = true
 step_d_step_ref_change = 10
-step_d_initial_seed = 
+step_d_initial_seed =
 step_d_replacebadcorr = false
 
-# --- Step E (3D Reconstruction) ---
+# --- Step E (3D Reconstruction) --- (not used by the mirrored mode, which stops at 2D DIC)
 step_e_analysis_type = regular
 step_e_radius = 40
-step_e_spacing = 10
+step_e_spacing = 20
 step_e_cutoff_diffnorm = 1e-5
 step_e_cutoff_iteration = 100
 step_e_total_threads = 1
@@ -75,7 +79,7 @@ step_e_high_strain_enabled = true
 step_e_seed_type = seed
 step_e_auto_update = true
 step_e_step_ref_change = 10
-step_e_initial_seed = 
+step_e_initial_seed =
 step_e_distortion_removal = false
 
 # Stitching of the per-pair 3D surfaces (used when all pairs of a trial exist):
@@ -89,10 +93,10 @@ step_e_stitch_mode = geometric
 # The brute-force scan dominates Step E on rigs with several pairs (hours vs minutes).
 step_e_ray_bvh = false
 
-# --- Step F (Deformation) ---
+# --- Step F (Deformation) --- (not used by the mirrored mode)
 step_f_analysis_type = regular
-step_f_radius = 30
-step_f_spacing = 10
+step_f_radius = 40
+step_f_spacing = 20
 step_f_cutoff_diffnorm = 1e-5
 step_f_cutoff_iteration = 100
 step_f_total_threads = 1
@@ -100,7 +104,7 @@ step_f_high_strain_enabled = true
 step_f_seed_type = seed
 step_f_auto_update = true
 step_f_step_ref_change = 10
-step_f_initial_seed = 
+step_f_initial_seed =
 step_f_temporal_filtering = true
 step_f_freq_filt = 10.0
 step_f_compute_rbm = false
@@ -110,7 +114,24 @@ step_f_compute_rbm = false
 # (e.g. an 8-camera rig: camera_pairs = 1,2;3,4;5,6;7,8). Missing entries default
 # to (2N-1, 2N). Video files, REF masks/seeds and DLT calibrations are resolved
 # from these camera ids.
+#this is not read for mirrored mode.
 camera_pairs = 1,2;3,4;5,6;7,8
+
+# --- Mirrored-camera geometry (read ONLY by the mirrored build) ---
+# mirrored_num_pair: stereopairs 1..N are processed (7 = 8 views -> 7 overlapping pairs).
+#   Pairs without REF_MASK/REF_SEED (here 2, 4, 6) fail individually and the run goes on.
+#   Stereopair k -> views: 1:(1,2) 2:(2,3) 3:(3,4) 4:(4,5) 5:(6,5) 6:(7,6) 7:(8,7);
+#   the REF files use the stereopair number: REF_MASK_<ref trial>_<phase>_pair<k>.mat
+# mirrored_cam_order: physical camera of view slots (views 1-2, 3-4, 5-6, 7-8).
+#   Defaults 2,1,4,3 are those of the Manneback rig: VERIFY for DD4.
+mirrored_num_pair = 7
+mirrored_cam_order = 2,1,4,3
+# mirrored_pairs: stereopairs to process (1-based). Empty/absent = all 1..mirrored_num_pair.
+mirrored_pairs = 1,3,5,7
+# param_filt_im = r1,r2 band-pass radii (Matlab default 25,300); filt_percentiles = low,high (%) ROI normalisation (default 5,95).
+param_filt_im = 10,200 #25,300
+filt_percentiles = 1,99
+save_match_check_image = true
 
 # --- Units & Calibration ---
 units_per_pixel = 0.2

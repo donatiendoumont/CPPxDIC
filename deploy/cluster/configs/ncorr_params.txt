@@ -3,11 +3,11 @@
 # These override DIC params where applicable.
 # =============================================================================
 
-units_per_pixel = 0.2
+units_per_pixel = 1
 radius = 20
 debug = false
 threads = 4
-maxCorrCoeff = 1.0
+maxCorrCoeff = 2 # 1
 scalefactor = 1
 interp = cubic
 subregion = round
@@ -19,14 +19,14 @@ save_disps_steps = false
 perspective_interp = false
 units = mm
 seeds_are_optimized = false
-cutoff_max_diffnorm = 0.1
-cutoff_max_corrcoef = 0.5
+cutoff_max_diffnorm = 0.1 #0.1
+cutoff_max_corrcoef = 0.5 #0.5
 
 # Seed-quality gate for inter-view MATCHING seeds (cam1->cam2 / view1->view2 at the
 # reference frame). Different perspectives correlate worse than consecutive frames,
 # so this gate is looser than cutoff_max_corrcoef (which applies to tracking seeds).
 # Default: 1.0
-matching_cutoff_max_corrcoef = 1.0
+matching_cutoff_max_corrcoef = 100 #1.0 I don't want to remove any points. 
 
 # DIC engine: ncorr (CppNCorr, multi-threaded CPU via parallel_processing +
 # step_d_total_threads) or cuncorr (cuNCorr GPU; falls back to a single-threaded
