@@ -106,6 +106,7 @@ cppxdic_add_test(test_delaunay            unit/test_delaunay.cpp)
 cppxdic_add_test(test_temporal_filter     unit/test_temporal_filter.cpp)
 cppxdic_add_test(test_face_isotropy       unit/test_face_isotropy.cpp)
 cppxdic_add_test(test_surface_stitching   unit/test_surface_stitching.cpp)
+cppxdic_add_test(test_trial_selection     unit/test_trial_selection.cpp)
 
 # ----------------------------------------------------------------------------
 # Integration tests.

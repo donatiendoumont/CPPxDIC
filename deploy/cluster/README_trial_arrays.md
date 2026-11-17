@@ -112,6 +112,36 @@ sbatch --array=1-${N} \
 skips the header, and selects the Nth data line, setting both the subject and
 the trial for that task.
 
+### Per-trial frame window (optional columns `start,end,jump`)
+
+Columns 3-5 of the CSV set the frame window of that trial. They are optional and
+positional (header names are not interpreted):
+
+```csv
+subject,trial,idx_frame_start,idx_frame_end,frame_jump
+DD4_rolling,2,16,161,1
+DD4_rolling,3,16,161,1
+NC_rolling,2,,,
+NC_rolling,3,,,
+```
+
+Rows with empty cells (or without the extra columns) use the `dic_params.txt` window.
+
+- An **empty or missing field keeps the `dic_params.txt` value**
+  (`idx_frame_start`, `idx_frame_end`, `frame_jump`): the config file stays the
+  default for every trial, the CSV only overrides what it states.
+- `start >= 1`, `jump >= 1`, `end >= start`; `end = 0` means "up to the end of
+  the video". Invalid values abort the task with an error naming the line.
+- When a row sets a window, `force_frame_window` is switched on for that run, so
+  the explicit window also wins over a protocol `.mat` in camerapairs mode.
+- Applies only with `SLURM_ARRAY_TASK_ID` set. Without it (whole list in one
+  process) the windows are ignored with a warning and `dic_params.txt` applies.
+- `--trial` / `--trials` / `--trials-file` have no per-trial window.
+- Plain text only (no quotes, no spreadsheet "2,3" cells): the parser splits on
+  commas.
+- `run_subject_trial_array.sbatch` does `cd ${WORKDIR}` before reading the CSV,
+  so give `SUBJECT_TRIAL_CSV` as an absolute path (or put the CSV in `WORKDIR`).
+
 ---
 
 ## Singularity

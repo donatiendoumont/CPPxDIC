@@ -62,9 +62,11 @@ void print_usage(const char* prog_name) {
               << "  (a) --trial <id>             Run a single trial.\n"
               << "  (b) --trials <list>          Trial list (e.g. 7,12,25); with SLURM_ARRAY_TASK_ID\n"
               << "      --trials-file <path>     set, the Nth (1-based) trial is run for this task.\n"
-              << "  (c) --subject-trial-csv <p>  subject_trial.csv (header subject,trial). With\n"
-              << "                               SLURM_ARRAY_TASK_ID set, the Nth data line selects\n"
-              << "                               both subject and trial for this task.\n"
+              << "  (c) --subject-trial-csv <p>  subject_trial.csv (header subject,trial[,start,end,jump]).\n"
+              << "                               With SLURM_ARRAY_TASK_ID set, the Nth data line selects\n"
+              << "                               both subject and trial for this task. Optional columns\n"
+              << "                               start,end,jump set that trial's frame window; empty =\n"
+              << "                               value from dic_params.txt.\n"
               << "  Without SLURM_ARRAY_TASK_ID, --trials/--trials-file run the whole list and\n"
               << "  --subject-trial-csv runs every row (grouped per subject).\n\n"
               << "STAGE DECOMPOSITION (run sub-steps in separate processes; needs explicit trials):\n"
@@ -230,6 +232,9 @@ int main(int argc, char* argv[]) {
     // CSV-driven subject override. If none is used, selected_trials stays empty
     // and the default DicAnalysis::run() path is taken (unchanged behaviour).
     std::vector<int> selected_trials;
+    // Per-trial frame window from the CSV row (start/end/jump columns); applied to
+    // the config after it is loaded. Unset fields keep the dic_params.txt values.
+    cppxdic::SubjectTrial csv_window;
     {
         int mode_count = (single_trial >= 0 ? 1 : 0) + (!trials_spec.empty() ? 1 : 0) +
                          (!trials_file.empty() ? 1 : 0) + (!subject_trial_csv.empty() ? 1 : 0);
@@ -282,6 +287,7 @@ int main(int argc, char* argv[]) {
                     const auto& row = rows[task_id - 1];
                     subject_override = row.subject;  // CSV drives the subject
                     selected_trials = {row.trial};
+                    csv_window = row;
                     LOG_INFO << "[SLURM array] task " << task_id << " -> subject "
                              << row.subject << ", trial " << row.trial;
                 } else {
@@ -298,6 +304,11 @@ int main(int argc, char* argv[]) {
                             return 1;
                         }
                         selected_trials.push_back(row.trial);
+                        if (row.hasWindow()) {
+                            LOG_WARN << "subject_trial CSV: per-trial start/end/jump ignored "
+                                        "without SLURM_ARRAY_TASK_ID (trial " << row.trial
+                                     << "); dic_params.txt window applies to all rows.";
+                        }
                     }
                     subject_override = subj0;
                 }
@@ -338,6 +349,18 @@ int main(int argc, char* argv[]) {
 
         // Update derived variables
         config.updateVariables();
+
+        // Per-trial frame window from the subject_trial CSV row (highest priority,
+        // like the other CLI overrides). Unset fields keep the dic_params.txt value.
+        // force_frame_window makes the explicit window authoritative over any protocol.
+        if (csv_window.hasWindow()) {
+            if (csv_window.start) config.idx_frame_start = *csv_window.start;
+            if (csv_window.end) config.idx_frame_end = *csv_window.end;
+            if (csv_window.jump) config.frame_jump = *csv_window.jump;
+            config.force_frame_window = true;
+            LOG_INFO << "Frame window from CSV row: start=" << config.idx_frame_start
+                     << " end=" << config.idx_frame_end << " jump=" << config.frame_jump;
+        }
 
         // Register the stereopair -> cameras table so every Utils::getCamerasForPair
         // caller (Step D import/tracking, Step E DLT lookup, checkpoints) honours
