@@ -106,10 +106,31 @@ From: ubuntu:22.04
     rm -rf /opt/cppxdic/src/build
 
 %files
-    # Copy the entire project source into the container at build time
-    # Run: apptainer build --fakeroot cppxdic_mirrored.sif deploy/cluster/cppxdic_mirrored.def
-    # from the CPPxDIC repo root.
-    . /opt/cppxdic/src
+    # Copy ONLY what the build and the image need, not the whole repository: copying "."
+    # also embedded every large untracked file lying around (previous .sif images in
+    # deploy/cluster/, logs, results), and the image grew with each rebuild
+    # (5.6 GB instead of 3.4 GB on 2026-11-17). Run from the CPPxDIC repo root:
+    #   apptainer build --fakeroot cppxdic_mirrored.sif deploy/cluster/cppxdic_mirrored.def
+    #
+    # Needed by CMake: CMakeLists.txt, src, include, apps (singledic, proxyncorr,
+    # gen_subject_trial), Tools/CppNCorr (add_subdirectory), Tools/cuNCorr (optional,
+    # auto-detected), tests/cppxdic_suite (add_subdirectory while BUILD_TESTING=ON, the
+    # default). Needed at runtime: deploy/entrypoint.sh (installed in %post), config/ and
+    # the *_params.txt defaults. Left out: Tools/MultiDIC (Matlab, 114 MB), docs, the
+    # other tests, deploy/cluster. If a new top-level folder becomes a build dependency,
+    # add it here.
+    CMakeLists.txt /opt/cppxdic/src/CMakeLists.txt
+    src /opt/cppxdic/src/src
+    include /opt/cppxdic/src/include
+    apps /opt/cppxdic/src/apps
+    config /opt/cppxdic/src/config
+    Tools/CppNCorr /opt/cppxdic/src/Tools/CppNCorr
+    Tools/cuNCorr /opt/cppxdic/src/Tools/cuNCorr
+    tests/cppxdic_suite /opt/cppxdic/src/tests/cppxdic_suite
+    deploy/entrypoint.sh /opt/cppxdic/src/deploy/entrypoint.sh
+    dic_params.txt /opt/cppxdic/src/dic_params.txt
+    ncorr_params.txt /opt/cppxdic/src/ncorr_params.txt
+    visualization_params.txt /opt/cppxdic/src/visualization_params.txt
 
 %runscript
     # App dispatcher: `apptainer run cppxdic_mirrored.sif <app> [args]` selects

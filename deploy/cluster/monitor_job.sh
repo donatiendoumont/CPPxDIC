@@ -7,12 +7,19 @@
 #   ./monitor_job.sh <job_id>         # Monitor a specific job
 #   ./monitor_job.sh --tail <job_id>  # Live-tail stdout of a running job
 #   ./monitor_job.sh --summary        # Summary of all completed jobs in logs/
+#   ./monitor_job.sh --name cppxdic-st            # job list filtered on the job NAME (regex)
+#   ./monitor_job.sh --name 'cppxdic-(st|mirrored)' --watch
+#
+# The job-list filter is a regular expression matched against the Slurm job name
+# (default '^cppxdic', i.e. every cppxdic* job: cppxdic, cppxdic-st, cppxdic-trials,
+# cppxdic-mirrored, ...). Set it with --name <regex> or the JOB_NAME_REGEX variable.
 # =============================================================================
 
 set -euo pipefail
 
 LOGS_DIR="${LOGS_DIR:-$(dirname "$0")/logs}"
 REFRESH_INTERVAL=10
+NAME_REGEX="${JOB_NAME_REGEX:-^cppxdic}"
 
 # Colors
 RED='\033[0;31m'
@@ -34,6 +41,8 @@ show_usage() {
     echo "  --tail <job_id>    Live-tail the stdout log of a running job"
     echo "  --summary          Show summary table of all completed jobs in logs/"
     echo "  --watch            Continuously refresh job list (every ${REFRESH_INTERVAL}s)"
+    echo "  --name <regex>     Filter the job list on the Slurm job name (default: ${NAME_REGEX})"
+    echo "                     e.g. --name cppxdic-st   or   --name 'cppxdic-(st|mirrored)'"
     echo "  --help             Show this help"
 }
 
@@ -43,23 +52,26 @@ list_jobs() {
     echo ""
     
     # Header
-    printf "%-12s %-10s %-8s %-20s %-12s %-10s\n" \
-        "JOB_ID" "STATE" "CPUS" "NODE" "ELAPSED" "MEM_USED"
-    printf "%s\n" "------------------------------------------------------------------------"
-    
-    # Query SLURM
-    squeue -u "${USER}" -n cppxdic -o "%.12i %.10T %.8C %.20R %.12M %.10m" --noheader 2>/dev/null \
-    || echo "(No running cppxdic jobs found)"
-    
+    printf "%-14s %-16s %-10s %-6s %-20s %-12s %-10s\n" \
+        "JOB_ID" "NAME" "STATE" "CPUS" "NODE" "ELAPSED" "MEM_REQ"
+    printf "%s\n" "------------------------------------------------------------------------------------"
+
+    # Query SLURM. squeue -n only accepts exact names, so list every job of the user and
+    # filter on the job-name column (2nd) with the regular expression NAME_REGEX.
+    squeue -u "${USER}" -o "%.14i %.16j %.10T %.6C %.20R %.12M %.10m" --noheader 2>/dev/null \
+        | awk -v re="${NAME_REGEX}" '$2 ~ re' | grep . \
+    || echo "(No running jobs with a name matching /${NAME_REGEX}/)"
+
     echo ""
-    
-    # Also show recently completed jobs (last 24h)
-    echo -e "${CYAN}--- Recently completed (last 24h) ---${NC}"
-    sacct -u "${USER}" -n cppxdic \
+
+    # Also show recently completed jobs (last 24h), same name filter
+    echo -e "${CYAN}--- Last 24h (name matching /${NAME_REGEX}/) ---${NC}"
+    sacct -u "${USER}" -X \
         --starttime=$(date -d '24 hours ago' '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || date -v-24H '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo "2024-01-01") \
-        --format="JobID%-12,State%-12,ExitCode%-8,Elapsed%-12,MaxRSS%-12,NodeList%-20" \
+        --format="JobID%-14,JobName%-16,State%-12,ExitCode%-8,Elapsed%-10,AllocCPUS%-6,NodeList%-14" \
         --noheader 2>/dev/null \
-    || echo "(sacct not available or no recent jobs)"
+        | awk -v re="${NAME_REGEX}" '$2 ~ re' | grep . \
+    || echo "(sacct not available or no matching job in the last 24h)"
     echo ""
 }
 
@@ -210,6 +222,26 @@ watch_jobs() {
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
+
+# Optional "--name <regex>" (anywhere on the line) sets the job-name filter of the list.
+ARGS=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --name)
+            if [ -z "${2:-}" ]; then
+                echo "ERROR: --name requires a regular expression"
+                exit 1
+            fi
+            NAME_REGEX="$2"
+            shift 2
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+set -- ${ARGS[@]+"${ARGS[@]}"}
 
 case "${1:-}" in
     --help|-h)
