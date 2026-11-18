@@ -10,7 +10,7 @@
 #
 # Use it with `source` so that CSV and N are set in your shell:
 #     source ~/CPPxDIC/deploy/cluster/submit_csv.sh $CONFIG_DIR/subject_trial.csv
-#     sbatch --array=1-${N} --cpus-per-task=8 --mem=32G --time=02:00:00 \
+#     sbatch --array=1-${N} --cpus-per-task=8 --mem=16G --time=02:00:00 \
 #            --export=ALL,SUBJECT_TRIAL_CSV=$CSV,WORKDIR=$CONFIG_DIR \
 #            deploy/cluster/run_subject_trial_array.sbatch
 # (Run directly, `./submit_csv.sh ...` prepares the CSV and prints CSV and N, but cannot set
