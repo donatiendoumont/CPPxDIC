@@ -52,35 +52,15 @@ step_d_high_strain_enabled = true
 step_d_seed_type = seed
 step_d_auto_update = true
 step_d_step_ref_change = 10
-step_d_initial_seed = 
 step_d_replacebadcorr = false
 
-# --- Step E (3D Reconstruction) ---
-step_e_analysis_type = regular
+# --- Matching and Step E (3D Reconstruction) ---
+# (the other step_e_* / step_f_* DIC keys were removed 2026-11-18: no mode read them)
 step_e_radius = 60
-step_e_spacing = 10
 step_e_cutoff_diffnorm = 1e-5
-step_e_cutoff_iteration = 100
-step_e_total_threads = 1
-step_e_high_strain_enabled = true
-step_e_seed_type = seed
-step_e_auto_update = true
-step_e_step_ref_change = 10
-step_e_initial_seed = 
 step_e_distortion_removal = false
 
 # --- Step F (Deformation) ---
-step_f_analysis_type = regular
-step_f_radius = 40
-step_f_spacing = 10
-step_f_cutoff_diffnorm = 1e-5
-step_f_cutoff_iteration = 100
-step_f_total_threads = 1
-step_f_high_strain_enabled = true
-step_f_seed_type = seed
-step_f_auto_update = true
-step_f_step_ref_change = 10
-step_f_initial_seed = 
 step_f_temporal_filtering = true
 step_f_freq_filt = 10.0
 step_f_compute_rbm = false

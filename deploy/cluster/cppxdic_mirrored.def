@@ -128,9 +128,12 @@ From: ubuntu:22.04
     Tools/cuNCorr /opt/cppxdic/src/Tools/cuNCorr
     tests/cppxdic_suite /opt/cppxdic/src/tests/cppxdic_suite
     deploy/entrypoint.sh /opt/cppxdic/src/deploy/entrypoint.sh
-    dic_params.txt /opt/cppxdic/src/dic_params.txt
-    ncorr_params.txt /opt/cppxdic/src/ncorr_params.txt
-    visualization_params.txt /opt/cppxdic/src/visualization_params.txt
+    # Default parameter files baked in the image (the cluster runs read the ones of WORKDIR
+    # instead). They come from deploy/cluster/configs/: the copies that used to sit at the
+    # repository root were removed on 2026-11-18.
+    deploy/cluster/configs/dic_params.txt /opt/cppxdic/src/dic_params.txt
+    deploy/cluster/configs/ncorr_params.txt /opt/cppxdic/src/ncorr_params.txt
+    deploy/cluster/configs/visualization_params.txt /opt/cppxdic/src/visualization_params.txt
 
 %runscript
     # App dispatcher: `apptainer run cppxdic_mirrored.sif <app> [args]` selects

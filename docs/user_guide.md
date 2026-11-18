@@ -70,7 +70,7 @@ booleans `true/false`/`1/0`/`yes`. Key categories (every key mirrors a field in
 | DIC selection | `subject_id`, `phase_id`, `material_id`, `nfcond_set`, `spddxlcond_set`, `calib_folder_set`, `ref_trial_id` |
 | Frame range | `idx_frame_start`, `idx_frame_end`, `frame_jump` |
 | Step D (tracking) | `step_d_radius`, `step_d_spacing`, `step_d_cutoff_diffnorm`, `step_d_cutoff_iteration`, `step_d_total_threads`, `step_d_seed_type`, `step_d_replacebadcorr` |
-| Step E (matching/3D) | `step_e_radius`, `step_e_analysis_type`, `step_e_auto_update`, `step_e_cutoff_diffnorm` |
+| Matching / Step E (3D) | `step_e_radius`, `step_e_cutoff_diffnorm`, `step_e_distortion_removal`, `step_e_stitch_mode`, `step_e_ray_bvh` |
 | Step F (deformation) | `step_f_temporal_filtering`, `step_f_freq_filt`, `step_f_compute_rbm` |
 | NCorr engine | `scalefactor`, `interp`, `dic_config`, `cutoff_corrcoef`, `seeds_are_optimized`, `perspective_interp` |
 | Geometry/units | `units_per_pixel`, `subregion_radius`, `limit_grayscale` |
