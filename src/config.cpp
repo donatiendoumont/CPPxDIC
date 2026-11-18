@@ -269,56 +269,13 @@ bool Config::loadFromDicParamsFile(const std::string& filepath) {
             step_d.auto_update = parseBool(value);
         } else if (!(value = parseConfigValue(line, "step_d_step_ref_change")).empty()) {
             step_d.step_ref_change = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_d_initial_seed")).empty()) {
-            step_d.initial_seed = parseIntList(value);
         }
-        // Step E parameters
-        else if (!(value = parseConfigValue(line, "step_e_analysis_type")).empty()) {
-            step_e.analysis_type = value;
-        } else if (!(value = parseConfigValue(line, "step_e_radius")).empty()) {
+        // Matching parameters (the other step_e_* / step_f_* DIC keys were removed
+        // 2026-11-18: no mode read them; an old file that still has them is ignored)
+        else if (!(value = parseConfigValue(line, "step_e_radius")).empty()) {
             step_e.radius = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_e_spacing")).empty()) {
-            step_e.spacing = std::stoi(value);
         } else if (!(value = parseConfigValue(line, "step_e_cutoff_diffnorm")).empty()) {
             step_e.cutoff_diffnorm = std::stod(value);
-        } else if (!(value = parseConfigValue(line, "step_e_cutoff_iteration")).empty()) {
-            step_e.cutoff_iteration = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_e_total_threads")).empty()) {
-            step_e.total_threads = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_e_high_strain_enabled")).empty()) {
-            step_e.high_strain_enabled = parseBool(value);
-        } else if (!(value = parseConfigValue(line, "step_e_seed_type")).empty()) {
-            step_e.seed_type = value;
-        } else if (!(value = parseConfigValue(line, "step_e_auto_update")).empty()) {
-            step_e.auto_update = parseBool(value);
-        } else if (!(value = parseConfigValue(line, "step_e_step_ref_change")).empty()) {
-            step_e.step_ref_change = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_e_initial_seed")).empty()) {
-            step_e.initial_seed = parseIntList(value);
-        }
-        // Step F parameters
-        else if (!(value = parseConfigValue(line, "step_f_analysis_type")).empty()) {
-            step_f.analysis_type = value;
-        } else if (!(value = parseConfigValue(line, "step_f_radius")).empty()) {
-            step_f.radius = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_f_spacing")).empty()) {
-            step_f.spacing = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_f_cutoff_diffnorm")).empty()) {
-            step_f.cutoff_diffnorm = std::stod(value);
-        } else if (!(value = parseConfigValue(line, "step_f_cutoff_iteration")).empty()) {
-            step_f.cutoff_iteration = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_f_total_threads")).empty()) {
-            step_f.total_threads = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_f_high_strain_enabled")).empty()) {
-            step_f.high_strain_enabled = parseBool(value);
-        } else if (!(value = parseConfigValue(line, "step_f_seed_type")).empty()) {
-            step_f.seed_type = value;
-        } else if (!(value = parseConfigValue(line, "step_f_auto_update")).empty()) {
-            step_f.auto_update = parseBool(value);
-        } else if (!(value = parseConfigValue(line, "step_f_step_ref_change")).empty()) {
-            step_f.step_ref_change = std::stoi(value);
-        } else if (!(value = parseConfigValue(line, "step_f_initial_seed")).empty()) {
-            step_f.initial_seed = parseIntList(value);
         }
         // Step E specific parameters (3D reconstruction)
         else if (!(value = parseConfigValue(line, "step_e_ray_bvh")).empty()) {

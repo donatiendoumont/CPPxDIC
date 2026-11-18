@@ -10,11 +10,11 @@
 #include <vector>
 
 /**
- * Step-level DIC parameters (tracking/matching/combined)
- * Loaded from dic_params.txt step_d_*, step_e_*, step_f_* keys
+ * Step D tracking parameters (2D DIC), loaded from dic_params.txt step_d_* keys.
+ * Used by every mode (mirrored, camerapairs, singledic).
  */
 struct StepConfig {
-    std::string analysis_type = "regular";
+    std::string analysis_type = "regular"; // not used by the mirrored mode (always "regular")
     int radius = 40;
     int spacing = 10;
     double cutoff_diffnorm = 1e-5;
@@ -24,7 +24,17 @@ struct StepConfig {
     std::string seed_type = "seed";
     bool auto_update = true;
     int step_ref_change = 10;
-    std::vector<int> initial_seed; // empty = auto
+};
+
+/**
+ * Matching parameters (view 1 -> view 2), loaded from dic_params.txt step_e_radius and
+ * step_e_cutoff_diffnorm. The other step_e_* and all step_f_* DIC keys were removed on
+ * 2026-11-18: no mode read them (the matching reuses the step_d spacing, threads, ...).
+ * step_e_cutoff_diffnorm is read by camerapairs only; mirrored takes step_d_cutoff_diffnorm.
+ */
+struct MatchingConfig {
+    int radius = 60; // MATLAB: subset_radius_ncorr_matching = 60
+    double cutoff_diffnorm = 1e-5;
 };
 
 class Config {
@@ -144,13 +154,8 @@ public:
     int limit_grayscale = 0;
 
     // Step-level DIC parameters (loaded from dic_params.txt)
-    StepConfig step_d;       // Step D: initial tracking
-    StepConfig step_e = [] { // Step E: matching (larger radius by default)
-        StepConfig c;
-        c.radius = 60; // MATLAB: subset_radius_ncorr_matching = 60
-        return c;
-    }();
-    StepConfig step_f; // Step F: combined/final
+    StepConfig step_d;     // Step D: tracking
+    MatchingConfig step_e; // matching view 1 -> view 2 (larger radius by default)
 
     // Step E specific parameters (3D reconstruction)
     // Step E stitching of the per-pair 3D surfaces: "geometric" (MATLAB-faithful overlap
