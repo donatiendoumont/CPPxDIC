@@ -2,3 +2,4 @@ subject,trial,phase,frame_jump
 DD4_rolling,2:3,slide+relax,
 NC_rolling,"[1,2,12]",loading,
 NC_rolling,7,all,2
+NC_rolling,7,"[1,2,3]",2

@@ -4,15 +4,15 @@
 #
 # Usage:
 #   ./frame_rolling_complete_csv.sh [csv] [extra options]
-#     csv   : subject_trial.csv to complete   (default: $CONFIG_DIR/subject_trial.csv)
+#     csv   : subject_trial.csv to complete   (required, no default)
 #   Data folder: $DATA_ROOT, else $DATA_DIR/rawdata (DATA_DIR is already exported).
 #   Extra options are passed to the Python script (--dry-run, --force, --verbose, --phase ...).
 #   frame_jump is NOT an option: write it in the `frame_jump` column of the CSV
 #   (an empty cell = the value of dic_params.txt).
 #
 # Examples:
-#   ./frame_rolling_complete_csv.sh                       # CSV of $CONFIG_DIR
-#   ./frame_rolling_complete_csv.sh "" --dry-run          # preview, writes nothing
+#   ./frame_rolling_complete_csv.sh $PROJECT_DIR/subject_trial.csv
+#   ./frame_rolling_complete_csv.sh $PROJECT_DIR/subject_trial.csv --dry-run          # preview, writes nothing
 #   ./frame_rolling_complete_csv.sh my.csv --verbose      # another CSV
 #
 # SOURCE CSV (never modified), columns read by header name:
@@ -28,7 +28,7 @@
 #
 # Protocol folder searched per subject: ${DATA_ROOT}/<subject>/speckles/<MATERIAL>/protocol/*.tsv
 # with MATERIAL=glass by default, e.g.
-#   DATA_ROOT=.../data_staged/slip_and_roll/rawdata
+#   DATA_ROOT=.../data_staged/slip_and_roll_rolling/rawdata
 #   -> .../rawdata/DD4_rolling/speckles/glass/protocol/*.tsv
 # (change with MATERIAL=... or PROTOCOL_DIR_TEMPLATE='{data_root}/{subject}/...').
 #
@@ -39,9 +39,10 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# The CSV is optional and must come BEFORE any --option.
-CSV="${CONFIG_DIR:-.}/subject_trial.csv"
-if [[ $# -gt 0 && "$1" != --* ]]; then [[ -n "$1" ]] && CSV="$1"; shift; fi
+# The CSV is required (no default) and must come BEFORE any --option.
+CSV=""
+if [[ $# -gt 0 && "$1" != --* ]]; then CSV="$1"; shift; fi
+: "${CSV:?give the source CSV: $(basename "$0") <csv> [options]}"
 
 # Raw-data folder: $DATA_ROOT if set, otherwise $DATA_DIR/rawdata (DATA_DIR is already exported
 # in the shell: .../data_staged/$PROJECT_NAME).
