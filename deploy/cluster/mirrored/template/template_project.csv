@@ -1,0 +1,3 @@
+subject,trial,phase,frame_jump
+my_subject,1:3,4,
+my_subject,"[5,7]",3+4,2
